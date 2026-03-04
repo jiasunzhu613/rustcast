@@ -508,11 +508,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                 });
             }
             if !tile.query_lc.is_empty() && tile.page == Page::EmojiSearch {
-                tile.results = tile
-                    .emoji_apps
-                    .search_prefix("")
-                    .map(|x| x.to_owned())
-                    .collect();
+                tile.results = vec![]
             }
 
             tile.results.sort_by_key(|x| -x.ranking);
