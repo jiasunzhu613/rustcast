@@ -189,9 +189,9 @@ impl Tile {
                             } else if modifiers.command() && chr.to_string() == "," {
                                 open_settings();
                             } else if chr.to_string() == "p" && modifiers.control() {
-                                return Some(Message::ChangeFocus(ArrowKey::Up, 3));
+                                return Some(Message::ChangeFocus(ArrowKey::Up, 1));
                             } else if chr.to_string() == "n" && modifiers.control() {
-                                return Some(Message::ChangeFocus(ArrowKey::Down, 3));
+                                return Some(Message::ChangeFocus(ArrowKey::Down, 1));
                             } else {
                                 return Some(Message::FocusTextInput(Move::Forwards(
                                     chr.to_string(),
