@@ -22,7 +22,7 @@ use iced::{
 };
 use iced::{event, window};
 
-use log::info;
+use log::{info, warn};
 use objc2::rc::Retained;
 use objc2_app_kit::NSRunningApplication;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -31,6 +31,7 @@ use tray_icon::TrayIcon;
 use std::fmt::Debug;
 use std::fs;
 use std::ops::Bound;
+use std::str::FromStr;
 use std::time::Duration;
 use std::{collections::BTreeMap, path::Path};
 
@@ -109,6 +110,7 @@ pub struct Tile {
     pub focus_id: u32,
     pub query: String,
     pub current_mode: String,
+    pub update_available: bool,
     query_lc: String,
     results: Vec<App>,
     options: AppIndex,
@@ -171,6 +173,7 @@ impl Tile {
             Subscription::run(handle_hotkeys),
             keyboard,
             Subscription::run(handle_recipient),
+            Subscription::run(check_version),
             Subscription::run(handle_hot_reloading),
             Subscription::run(handle_clipboard_history),
             window::close_events().map(Message::HideWindow),
@@ -390,6 +393,54 @@ fn handle_recipient() -> impl futures::Stream<Item = Message> {
                 abcd.await;
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    })
+}
+
+fn check_version() -> impl futures::Stream<Item = Message> {
+    stream::channel(100, async |mut output| {
+        let current_version = format!("\"{}\"", option_env!("APP_VERSION").unwrap_or(""));
+
+        if current_version.is_empty() {
+            println!("empty version");
+            return;
+        }
+
+        let req = minreq::Request::new(
+            minreq::Method::Get,
+            "https://api.github.com/repos/unsecretised/rustcast/releases/latest",
+        )
+        .with_header("User-Agent", "rustcast-update-checker")
+        .with_header("Accept", "application/vnd.github+json")
+        .with_header("X-GitHub-Api-Version", "2022-11-28");
+
+        loop {
+            let resp = req
+                .clone()
+                .send()
+                .and_then(|x| x.as_str().map(serde_json::Value::from_str));
+
+            info!("Made a req for latest version");
+
+            if let Ok(Ok(val)) = resp {
+                let new_ver = val
+                    .get("name")
+                    .map(|x| x.to_string())
+                    .unwrap_or("".to_string());
+
+                // new_ver is in the format "\"v0.0.0\""
+                // note that it is encapsulated in double quotes
+                if new_ver.trim() != current_version
+                    && !new_ver.is_empty()
+                    && new_ver.starts_with("\"v")
+                {
+                    info!("new version available: {new_ver}");
+                    output.send(Message::UpdateAvailable).await.ok();
+                }
+            } else {
+                warn!("Error getting resp");
+            }
+            tokio::time::sleep(Duration::from_secs(60)).await;
         }
     })
 }

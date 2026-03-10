@@ -26,7 +26,7 @@ use tokio::runtime::Runtime;
 /// This create a new menubar icon for the app
 pub fn menu_icon(config: Config, sender: ExtSender) -> TrayIcon {
     let builder = TrayIconBuilder::new();
-    let menu = menu_builder(config, sender);
+    let menu = menu_builder(config, sender, false);
 
     let image = get_image();
     let icon = Icon::from_rgba(image.as_bytes().to_vec(), image.width(), image.height()).unwrap();
@@ -38,7 +38,7 @@ pub fn menu_icon(config: Config, sender: ExtSender) -> TrayIcon {
         .unwrap()
 }
 
-pub fn menu_builder(config: Config, sender: ExtSender) -> Menu {
+pub fn menu_builder(config: Config, sender: ExtSender, update_item: bool) -> Menu {
     let hotkey = config.toggle_hotkey.parse::<HotKey>().unwrap();
 
     let mut modes = config.modes;
@@ -49,6 +49,16 @@ pub fn menu_builder(config: Config, sender: ExtSender) -> Menu {
     init_event_handler(sender, hotkey.id());
 
     Menu::with_items(&[
+        &MenuItem::with_id(
+            "update",
+            if update_item {
+                "Update available"
+            } else {
+                "Up to date"
+            },
+            update_item,
+            None,
+        ),
         &version_item(),
         &about_item(get_image()),
         &open_github_item(),
@@ -103,6 +113,9 @@ fn init_event_handler(sender: ExtSender, hotkey_id: u32) {
                         .try_send(Message::KeyPressed(hotkey_id))
                         .unwrap();
                 });
+            }
+            "update" => {
+                open_url("https://github.com/unsecretised/rustcast/releases/latest");
             }
             "open_discord" => {
                 open_url(DISCORD_LINK);

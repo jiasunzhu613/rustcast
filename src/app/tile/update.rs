@@ -45,6 +45,11 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        Message::UpdateAvailable => {
+            tile.update_available = true;
+            Task::done(Message::ReloadConfig)
+        }
+
         Message::SwitchMode(mode) => {
             if let Some(command) = tile.config.modes.get(mode.trim()) {
                 tile.current_mode = mode.clone();
@@ -245,9 +250,15 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                 icon.set_menu(Some(Box::new(menu_builder(
                     new_config.clone(),
                     tile.sender.clone().unwrap(),
+                    tile.update_available,
                 ))));
             } else {
                 tile.tray_icon = Some(menu_icon(new_config.clone(), tile.sender.clone().unwrap()));
+                tile.tray_icon
+                    .as_mut()
+                    .unwrap()
+                    .set_visible(tile.config.show_trayicon)
+                    .ok();
             }
 
             let mut new_options = get_installed_apps(new_config.theme.show_icons);
@@ -542,7 +553,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                     .map(|conversion| conversion.to_app())
                     .collect();
                 return single_item_resize_task(id);
-            } else if let Some(res) = Expr::from_str(&tile.query).ok() {
+            } else if let Ok(res) = Expr::from_str(&tile.query) {
                 tile.results.push(App {
                     ranking: 0,
                     open_command: AppCommand::Function(Function::Calculate(res.clone())),

@@ -49,6 +49,7 @@ pub enum Move {
 /// The message type that iced uses for actions that can do something
 #[derive(Debug, Clone)]
 pub enum Message {
+    UpdateAvailable,
     ResizeWindow(Id, f32),
     OpenWindow,
     SearchQueryChanged(String, Id),

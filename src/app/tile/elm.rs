@@ -62,6 +62,7 @@ pub fn new(hotkey: HotKey, config: &Config) -> (Tile, Task<Message>) {
 
     (
         Tile {
+            update_available: false,
             current_mode: "Default".to_string(),
             query: String::new(),
             query_lc: String::new(),
