@@ -87,6 +87,9 @@ configure [The list](docs/config.toml).
       rustcast
 - [x] RustCast modes (2/3/2026)
 - [x] Better documentation for the config (3/3/2026)
+- [x] Image rendering from clipboard history (13/3/2026)
+- [x] File searching (11/3/2026)
+- [x] CTRL n / p (vim motions) navigation for search results (5/3/2026)
 
 ### Planned:
 
@@ -94,7 +97,6 @@ configure [The list](docs/config.toml).
 - [ ] Settings Panel
 - [ ] Plugin Support (Partially implemented on 15/12/2025)
 - [ ] Hyperkey - Map CMD + OPT + CTRL + SHIFT to a physical key
-- [ ] Image rendering from clipboard history
 - [ ] Better hotkey picking
 - [ ] Ability to pick between tabs in firefox / chromium browsers - using
       [Puppeteer](https://pptr.dev/)
