@@ -1,6 +1,7 @@
 //! A drop-in debounce utility struct for delaying the execution of search queries
 // on different Page enum types
 
+use crate::config::Config;
 use std::time::{Duration, Instant};
 
 /// Fields needed to facilitate debounced queries
@@ -38,5 +39,5 @@ impl Debouncer {
 /// Trait policy implemented for each Page enum to opt into debounce queries
 pub trait DebouncePolicy {
     /// Returns Some(delay_ms) if this page should debounce, None otherwise                        
-    fn debounce_delay(&self) -> Option<Duration>;
+    fn debounce_delay(&self, config: &Config) -> Option<Duration>;
 }

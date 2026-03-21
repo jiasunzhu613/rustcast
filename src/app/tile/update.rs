@@ -447,7 +447,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
             }
 
             // Return a task that waits for the debounce delay before executing search
-            if let Some(delay) = tile.page.debounce_delay() {
+            if let Some(delay) = tile.page.debounce_delay(&tile.config) {
                 tile.debouncer.reset();
                 Task::perform(
                     async move {

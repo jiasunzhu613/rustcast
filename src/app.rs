@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::app::apps::{App, AppCommand, ICNS_ICON};
 use crate::commands::Function;
 use crate::debounce::DebouncePolicy;
+use crate::config::Config;
 use crate::utils::icns_data_to_handle;
 use crate::{app::tile::ExtSender, clipboard::ClipBoardContentType};
 use iced::time::Duration;
@@ -161,12 +162,12 @@ impl ToApps for HashMap<String, String> {
 }
 
 impl DebouncePolicy for Page {
-    fn debounce_delay(&self) -> Option<Duration> {
+    fn debounce_delay(&self, config: &Config) -> Option<Duration> {
         match self {
             Page::Main => None,
-            Page::FileSearch => Some(Duration::from_millis(300)),
+            Page::FileSearch => Some(Duration::from_millis(config.debounce_delay)),
             Page::ClipboardHistory => None,
-            Page::EmojiSearch => Some(Duration::from_millis(300)),
+            Page::EmojiSearch => Some(Duration::from_millis(config.debounce_delay)),
         }
     }
 }
