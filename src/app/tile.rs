@@ -71,6 +71,25 @@ impl AppIndex {
         app.ranking += 1;
     }
 
+    fn set_ranking(&mut self, name: &str, rank: i32) {
+        let app = match self.by_name.get_mut(name) {
+            Some(a) => a,
+            None => return,
+        };
+
+        app.ranking = rank;
+    }
+
+    fn get_rankings(&self) -> HashMap<String, i32> {
+        HashMap::from_iter(self.by_name.iter().filter_map(|(name, app)| {
+            if app.ranking > 0 {
+                Some((name.to_owned(), app.ranking.to_owned()))
+            } else {
+                None
+            }
+        }))
+    }
+
     fn empty() -> AppIndex {
         AppIndex {
             by_name: HashMap::new(),
@@ -115,6 +134,7 @@ pub struct Tile {
     pub query: String,
     pub current_mode: String,
     pub update_available: bool,
+    pub ranking: HashMap<String, i32>,
     query_lc: String,
     results: Vec<App>,
     options: AppIndex,
@@ -180,7 +200,7 @@ impl Tile {
             Subscription::run(handle_hot_reloading),
             keyboard,
             Subscription::run(handle_recipient),
-            Subscription::run(check_version),
+            Subscription::run(handle_version_and_rankings),
             Subscription::run(handle_clipboard_history),
             Subscription::run(handle_file_search),
             window::close_events().map(Message::HideWindow),
@@ -533,7 +553,7 @@ fn handle_recipient() -> impl futures::Stream<Item = Message> {
     })
 }
 
-fn check_version() -> impl futures::Stream<Item = Message> {
+fn handle_version_and_rankings() -> impl futures::Stream<Item = Message> {
     stream::channel(100, async |mut output| {
         let current_version = format!("\"{}\"", option_env!("APP_VERSION").unwrap_or(""));
 
@@ -576,7 +596,10 @@ fn check_version() -> impl futures::Stream<Item = Message> {
             } else {
                 warn!("Error getting resp");
             }
-            tokio::time::sleep(Duration::from_secs(60)).await;
+            tokio::time::sleep(Duration::from_secs(30)).await;
+            output.send(Message::SaveRanking).await.ok();
+            info!("Sent save ranking");
+            tokio::time::sleep(Duration::from_secs(30)).await;
         }
     })
 }

@@ -1,6 +1,9 @@
 //! This module handles the logic for the new and view functions according to the elm
 //! architecture. If the subscription function becomes too large, it should be moved to this file
 
+use std::collections::HashMap;
+use std::fs;
+
 use global_hotkey::hotkey::HotKey;
 use iced::border::Radius;
 use iced::widget::scrollable::{Anchor, Direction, Scrollbar};
@@ -65,6 +68,13 @@ pub fn new(hotkey: HotKey, config: &Config) -> (Tile, Task<Message>) {
             .unwrap_or("SUPER+SHIFT+C".parse().unwrap()),
     };
 
+    let home = std::env::var("HOME").unwrap_or("/".to_string());
+
+    let ranking = toml::from_str(
+        &fs::read_to_string(home + "/.config/rustcast/ranking.toml").unwrap_or("".to_string()),
+    )
+    .unwrap_or(HashMap::new());
+
     (
         Tile {
             update_available: false,
@@ -80,6 +90,7 @@ pub fn new(hotkey: HotKey, config: &Config) -> (Tile, Task<Message>) {
             frontmost: None,
             focused: false,
             config: config.clone(),
+            ranking,
             theme: config.theme.to_owned().clone().into(),
             clipboard_content: vec![],
             tray_icon: None,

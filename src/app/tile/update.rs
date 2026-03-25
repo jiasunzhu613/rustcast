@@ -221,6 +221,23 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
             )
         }
 
+        Message::LoadRanking => {
+            for (name, rank) in &tile.ranking {
+                tile.options.set_ranking(name, rank.to_owned());
+            }
+
+            Task::none()
+        }
+
+        Message::SaveRanking => {
+            tile.ranking = tile.options.get_rankings();
+            let string_rep = toml::to_string(&tile.ranking).unwrap_or("".to_string());
+            let ranking_file_path =
+                std::env::var("HOME").unwrap_or("/".to_string()) + "/.config/rustcast/ranking.toml";
+            fs::write(ranking_file_path, string_rep).ok();
+            Task::none()
+        }
+
         Message::OpenFocused => {
             info!("Open Focussed called");
             let results = if tile.page == Page::ClipboardHistory {
@@ -238,7 +255,10 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                     ..
                 }) => {
                     info!("Updating ranking for: {name}");
+                    let current_ranking = tile.ranking.get(name).map(|x| x.to_owned()).unwrap_or(0);
+                    tile.ranking.insert(name.to_owned(), current_ranking);
                     tile.options.update_ranking(name);
+
                     Task::done(Message::RunFunction(func.to_owned()))
                 }
                 Some(App {
@@ -290,7 +310,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
 
             tile.theme = new_config.theme.to_owned().into();
             tile.config = new_config;
-            Task::none()
+            Task::done(Message::LoadRanking)
         }
 
         Message::KeyPressed(hk_id) => {
