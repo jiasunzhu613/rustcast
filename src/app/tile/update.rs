@@ -383,7 +383,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
 
         Message::HideWindow(a) => {
             if tile.page == Page::Settings {
-                return Task::none()
+                return Task::none();
             }
             info!("Hiding RustCast window");
             tile.visible = false;
@@ -576,7 +576,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                 SetConfigFields::ToggleHotkey(hk) => final_config.toggle_hotkey = hk,
                 SetConfigFields::ClipboardHotkey(hk) => final_config.toggle_hotkey = hk,
                 SetConfigFields::Modes(Editable::Create((key, value))) => {
-                    final_config.modes.insert(key,value);
+                    final_config.modes.insert(key, value);
                 }
                 SetConfigFields::Modes(Editable::Delete((key, _))) => {
                     final_config.modes.remove(&key);
