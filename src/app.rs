@@ -80,6 +80,8 @@ pub enum Editable<T> {
 #[derive(Debug, Clone)]
 pub enum Message {
     WriteConfig(bool),
+    SaveRanking,
+    LoadRanking,
     UpdateAvailable,
     ResizeWindow(Id, f32),
     OpenWindow,
