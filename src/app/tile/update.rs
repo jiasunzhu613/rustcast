@@ -655,6 +655,9 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
             let config_file_path =
                 std::env::var("HOME").unwrap_or("".to_string()) + "/.config/rustcast/config.toml";
 
+            tile.config.aliases.remove("");
+            tile.config.modes.remove("");
+
             let config_string = match toml::to_string_pretty(&tile.config) {
                 Ok(a) => a,
                 Err(e) => {
