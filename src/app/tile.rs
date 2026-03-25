@@ -692,11 +692,12 @@ fn metadata_query_thread(
     let run_loop = NSRunLoop::currentRunLoop();
     let run_loop_mode = unsafe { NSDefaultRunLoopMode };
     let tick_seconds: f64 = 0.05;
+    let idle_sleep = Duration::from_millis((tick_seconds * 1000.0) as u64);
 
     loop {
         // Tick the run loop to process notifications.
         let timeout = NSDate::dateWithTimeIntervalSinceNow(tick_seconds);
-        run_loop.runMode_beforeDate(run_loop_mode, &timeout);
+        let handled_source = run_loop.runMode_beforeDate(run_loop_mode, &timeout);
 
         // Drain results only when the finish-gathering notification has fired.
         if results_ready.swap(false, Ordering::AcqRel) {
@@ -734,6 +735,12 @@ fn metadata_query_thread(
 
         if msg_tx.is_closed() {
             break;
+        }
+
+        // NSRunLoop can return immediately when no input sources/timers are active.
+        // Without this guard, the thread can busy-spin and consume a full core.
+        if !handled_source {
+            std::thread::sleep(idle_sleep);
         }
     }
 
