@@ -11,12 +11,15 @@ use crate::{
     calculator::Expr,
     clipboard::ClipBoardContentType,
     config::Config,
+    quit::{terminate_all_apps, terminate_app},
 };
 
 /// The different functions that rustcast can perform
 #[derive(Debug, Clone, PartialEq)]
 pub enum Function {
     OpenApp(String),
+    QuitApp(String),
+    QuitAllApps,
     RunShellCommand(String),
     OpenWebsite(String),
     RandomVar(i32), // Easter egg function
@@ -46,6 +49,14 @@ impl Function {
                     .unwrap()
                     .set_text(var.to_string())
                     .unwrap_or(());
+            }
+
+            Function::QuitAllApps => {
+                terminate_all_apps();
+            }
+
+            Function::QuitApp(name) => {
+                terminate_app(name.to_owned());
             }
 
             Function::GoogleSearch(query_string) => {
