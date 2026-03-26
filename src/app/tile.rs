@@ -382,7 +382,7 @@ async fn read_mdfind_results(
     home_dir: &str,
     receiver: &mut tokio::sync::watch::Receiver<(String, Vec<String>)>,
     output: &mut iced::futures::channel::mpsc::Sender<Message>,
-) {
+) -> bool {
     use crate::app::{FILE_SEARCH_BATCH_SIZE, FILE_SEARCH_MAX_RESULTS};
 
     let mut reader = tokio::io::BufReader::new(stdout);
@@ -395,7 +395,7 @@ async fn read_mdfind_results(
             result = reader.read_line(&mut line) => result,
             _ = receiver.changed() => {
                 // New query arrived — caller will handle it.
-                break;
+                return true;
             }
         };
 
@@ -408,7 +408,7 @@ async fn read_mdfind_results(
                         .await
                         .ok();
                 }
-                break;
+                return false;
             }
             Ok(_) => {
                 if let Some(app) = crate::commands::path_to_app(line.trim(), home_dir) {
@@ -428,10 +428,10 @@ async fn read_mdfind_results(
                             .await
                             .ok();
                     }
-                    break;
+                    return false;
                 }
             }
-            Err(_) => break,
+            Err(_) => return false,
         }
     }
 }
@@ -492,12 +492,14 @@ fn handle_file_search() -> impl futures::Stream<Item = Message> {
         assert!(!home_dir.is_empty(), "HOME must not be empty.");
 
         let mut child: Option<tokio::process::Child> = None;
+        let mut wait_for_change = true;
 
         loop {
-            if receiver.changed().await.is_err() {
-                return;
+            if wait_for_change && receiver.changed().await.is_err() {
+                break;
             }
-            receiver.borrow_and_update();
+
+            wait_for_change = true;
 
             // Kill previous mdfind if still running.
             if let Some(ref mut proc) = child {
@@ -506,7 +508,7 @@ fn handle_file_search() -> impl futures::Stream<Item = Message> {
             }
             child = None;
 
-            let (query, dirs) = receiver.borrow().clone();
+            let (query, dirs) = receiver.borrow_and_update().clone();
             assert!(query.len() < 1024, "Query too long.");
 
             if query.len() < 2 {
@@ -525,28 +527,51 @@ fn handle_file_search() -> impl futures::Stream<Item = Message> {
                 args.push(expanded);
             }
 
-            let spawn_result = tokio::process::Command::new("mdfind")
-                .args(&args)
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::null())
-                .kill_on_drop(true)
-                .spawn();
+            let mut command = tokio::process::Command::new("mdfind");
+            command.args(&args);
+            command.stdout(std::process::Stdio::piped());
+            command.stderr(std::process::Stdio::null());
 
-            let mut proc = match spawn_result {
-                Ok(p) => p,
-                Err(err) => {
-                    warn!("Failed to spawn mdfind: {err}");
+            let mut spawned = match command.spawn() {
+                Ok(child) => child,
+                Err(error) => {
+                    warn!("Failed to spawn mdfind: {error}");
                     continue;
                 }
             };
 
-            let stdout = match proc.stdout.take() {
-                Some(s) => s,
-                None => continue,
+            let stdout = match spawned.stdout.take() {
+                Some(stdout) => stdout,
+                None => {
+                    warn!("mdfind stdout was not captured");
+                    spawned.kill().await.ok();
+                    spawned.wait().await.ok();
+                    continue;
+                }
             };
-            child = Some(proc);
 
-            read_mdfind_results(stdout, &home_dir, &mut receiver, &mut output).await;
+            child = Some(spawned);
+
+            let canceled = read_mdfind_results(stdout, &home_dir, &mut receiver, &mut output).await;
+
+            if let Some(ref mut proc) = child {
+                if canceled {
+                    proc.kill().await.ok();
+                }
+                proc.wait().await.ok();
+            }
+            child = None;
+
+            // `read_mdfind_results` consumed the watch notification when canceled,
+            // so process the latest query immediately.
+            if canceled {
+                wait_for_change = false;
+            }
+        }
+
+        if let Some(ref mut proc) = child {
+            proc.kill().await.ok();
+            proc.wait().await.ok();
         }
     })
 }
