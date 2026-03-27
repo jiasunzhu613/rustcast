@@ -379,6 +379,8 @@ pub fn settings_page(config: Config) -> Element<'static, Message> {
         aliases_item(config.aliases.clone(), &theme),
         settings_hint_text(theme.clone(), "Modes"),
         modes_item(config.modes.clone(), &theme),
+        settings_hint_text(theme.clone(), "Search Directories"),
+        search_dirs_item(&theme, config.search_dirs.clone()),
         Row::from_iter([
             savebutton(theme.clone()),
             default_button(theme.clone()),
@@ -561,6 +563,47 @@ fn aliases_item(aliases: HashMap<String, String>, theme: &Theme) -> Element<'sta
     .into()
 }
 
+fn search_dirs_item(theme: &Theme, search_dirs: Vec<String>) -> Element<'static, Message> {
+    let theme_clone = theme.clone();
+    let search_dirs = search_dirs.clone();
+    Column::from_iter([
+        container(
+            Column::from_iter(search_dirs.iter().map(|dir| {
+                let theme_clone_2 = theme.clone();
+                let directory = dir.clone();
+                container(
+                    Row::from_iter([
+                        dir_picker_button(directory, dir, theme_clone.clone()).into(),
+                        Button::new("Delete")
+                            .on_press(Message::SetConfig(SetConfigFields::SearchDirs(
+                                Editable::Delete(dir.clone()),
+                            )))
+                            .style(move |_, _| delete_button_style(&theme_clone_2))
+                            .into(),
+                    ])
+                    .spacing(10)
+                    .align_y(Alignment::Center),
+                )
+                .width(Length::Fill)
+                .align_x(Alignment::Center)
+                .into()
+            }))
+            .spacing(10),
+        )
+        .height(Length::Fill)
+        .width(Length::Fill)
+        .align_x(Alignment::Center)
+        .align_y(Alignment::Center)
+        .into(),
+        dir_adder_button("+", theme.to_owned()).into(),
+    ])
+    .spacing(10)
+    .height(Length::Fill)
+    .width(Length::Fill)
+    .align_x(Alignment::Center)
+    .into()
+}
+
 fn text_input_cell(text: String, theme: &Theme, placeholder: &str) -> TextInput<'static, Message> {
     text_input(placeholder, &text)
         .font(theme.font())
@@ -630,4 +673,51 @@ fn modes_item(modes: HashMap<String, String>, theme: &Theme) -> Element<'static,
     .width(Length::Fill)
     .align_x(Alignment::Center)
     .into()
+}
+
+fn dir_picker_button(directory: String, dir: &str, theme: Theme) -> Button<'static, Message> {
+    let home = std::env::var("HOME").unwrap_or("/".to_string());
+    Button::new(Text::new(dir.to_owned().replace(&home, "~")))
+        .on_press_with(move || {
+            let msg = rfd::FileDialog::new()
+                .set_directory(home.clone())
+                .set_can_create_directories(false)
+                .pick_folder()
+                .map(|path| {
+                    let new = path.to_str().unwrap_or("").to_string();
+                    Message::SetConfig(SetConfigFields::SearchDirs(Editable::Update {
+                        old: directory.clone(),
+                        new,
+                    }))
+                })
+                .unwrap_or(Message::SetConfig(SetConfigFields::SearchDirs(
+                    Editable::Update {
+                        old: directory.clone(),
+                        new: directory.clone(),
+                    },
+                )));
+
+            msg
+        })
+        .style(move |_, _| settings_add_button_style(&theme.clone()))
+}
+
+fn dir_adder_button(dir: &str, theme: Theme) -> Button<'static, Message> {
+    Button::new(Text::new(dir.to_owned()))
+        .on_press_with(move || {
+            let msg = rfd::FileDialog::new()
+                .set_directory(std::env::var("HOME").unwrap_or("/".to_string()))
+                .set_can_create_directories(false)
+                .pick_folder()
+                .map(|path| {
+                    let new = path.to_str().unwrap_or("").to_string();
+                    Message::SetConfig(SetConfigFields::SearchDirs(Editable::Create(new)))
+                })
+                .unwrap_or(Message::SetConfig(SetConfigFields::SearchDirs(
+                    Editable::Create(String::new()),
+                )));
+
+            msg
+        })
+        .style(move |_, _| settings_add_button_style(&theme.clone()))
 }

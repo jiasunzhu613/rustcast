@@ -128,7 +128,7 @@ pub enum SetConfigFields {
     AutoSuggest(bool),
     Modes(Editable<(String, String)>),
     Aliases(Editable<(String, String)>),
-    SearchDirs(Editable<Vec<String>>),
+    SearchDirs(Editable<String>),
     DebounceDelay(u64),
     SetThemeFields(SetConfigThemeFields),
     SetBufferFields(SetConfigBufferFields),

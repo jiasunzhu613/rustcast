@@ -600,14 +600,14 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                     final_config.aliases.insert(new.0, new.1);
                 }
                 SetConfigFields::SearchDirs(Editable::Create(dir)) => {
-                    final_config.search_dirs = dir
+                    final_config.search_dirs.push(dir);
                 }
                 SetConfigFields::SearchDirs(Editable::Delete(dirs)) => {
                     final_config.search_dirs = final_config
                         .search_dirs
                         .iter()
                         .filter_map(|dir| {
-                            if !dirs.contains(dir) {
+                            if &dirs != dir {
                                 Some(dir.to_owned())
                             } else {
                                 None
@@ -616,8 +616,17 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                         .collect();
                 }
                 SetConfigFields::SearchDirs(Editable::Update { old, new }) => {
-                    let _ = old;
-                    let _ = new;
+                    final_config.search_dirs = final_config
+                        .search_dirs
+                        .iter()
+                        .map(|dir| {
+                            if dir == &old {
+                                new.clone()
+                            } else {
+                                dir.to_owned()
+                            }
+                        })
+                        .collect();
                 }
                 SetConfigFields::SearchUrl(url) => final_config.search_url = url,
                 SetConfigFields::PlaceHolder(placeholder) => final_config.placeholder = placeholder,
@@ -651,7 +660,6 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                 SetConfigFields::ToDefault => {
                     final_config = Config::default();
                     final_config.shells = tile.config.shells.clone();
-                    final_config.search_dirs = tile.config.search_dirs.clone();
                 }
             };
 
