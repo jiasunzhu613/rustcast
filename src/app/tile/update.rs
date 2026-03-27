@@ -703,6 +703,7 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                 }
                 SetConfigFields::ToDefault => {
                     final_config = Config::default();
+                    final_config.shells = tile.config.shells.clone();
                 }
             };
 

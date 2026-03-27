@@ -69,9 +69,7 @@ impl AppIndex {
             None => return,
         };
 
-        if app.ranking != -1 {
-            app.ranking += 1;
-        }
+        app.ranking += 1;
     }
 
     fn set_ranking(&mut self, name: &str, rank: i32) {
