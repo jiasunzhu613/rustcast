@@ -163,10 +163,7 @@ pub fn settings_page(config: Config) -> Element<'static, Message> {
         ])
         .spacing(30)
         .into(),
-        notice_item(
-            theme.clone(),
-            "If an empty query should give you your most used actions",
-        ),
+        notice_item(theme.clone(), "What an empty query should show"),
     ]);
 
     let theme_clone = theme.clone();
