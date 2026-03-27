@@ -600,7 +600,9 @@ pub fn handle_update(tile: &mut Tile, message: Message) -> Task<Message> {
                     final_config.aliases.insert(new.0, new.1);
                 }
                 SetConfigFields::SearchDirs(Editable::Create(dir)) => {
-                    final_config.search_dirs.push(dir);
+                    if !final_config.search_dirs.contains(&dir) {
+                        final_config.search_dirs.push(dir);
+                    }
                 }
                 SetConfigFields::SearchDirs(Editable::Delete(dirs)) => {
                     final_config.search_dirs = final_config
