@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::app::apps::{App, AppCommand, ICNS_ICON};
 use crate::commands::Function;
-use crate::config::{Config, MainPage};
+use crate::config::{Config, MainPage, Shelly};
 use crate::debounce::DebouncePolicy;
 use crate::utils::icns_data_to_handle;
 use crate::{app::tile::ExtSender, clipboard::ClipBoardContentType};
@@ -129,7 +129,8 @@ pub enum SetConfigFields {
     SetPage(MainPage),
     Modes(Editable<(String, String)>),
     Aliases(Editable<(String, String)>),
-    SearchDirs(Editable<Vec<String>>),
+    SearchDirs(Editable<String>),
+    ShellCommands(Editable<Shelly>),
     DebounceDelay(u64),
     SetThemeFields(SetConfigThemeFields),
     SetBufferFields(SetConfigBufferFields),
