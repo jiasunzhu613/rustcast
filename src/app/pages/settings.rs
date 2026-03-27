@@ -6,16 +6,19 @@ use iced::widget::Slider;
 use iced::widget::Space;
 use iced::widget::TextInput;
 use iced::widget::checkbox;
+use iced::widget::radio;
 use iced::widget::text_input;
 
 use crate::app::Editable;
 use crate::app::SetConfigBufferFields;
 use crate::app::SetConfigThemeFields;
 use crate::commands::Function;
+use crate::config::MainPage;
 use crate::config::Shelly;
 use crate::styles::delete_button_style;
 use crate::styles::settings_add_button_style;
 use crate::styles::settings_checkbox_style;
+use crate::styles::settings_radio_button_style;
 use crate::styles::settings_save_button_style;
 use crate::styles::settings_slider_style;
 use crate::styles::settings_text_input_item_style;
@@ -130,16 +133,40 @@ pub fn settings_page(config: Config) -> Element<'static, Message> {
     ]);
 
     let theme_clone = theme.clone();
-    let auto_suggest = settings_item_row([
+    let auto_suggest = settings_item_column([
         settings_hint_text(theme.clone(), "Suggestions on open"),
-        checkbox(config.auto_suggest)
-            .style(move |_, _| settings_checkbox_style(&theme_clone))
-            .on_toggle(|input| Message::SetConfig(SetConfigFields::AutoSuggest(input)))
+        settings_item_row([
+            radio(
+                "Favourites",
+                MainPage::Favourites,
+                Some(config.main_page),
+                |page| Message::SetConfig(SetConfigFields::SetPage(page)),
+            )
+            .style({
+                let theme_clone = theme_clone.clone();
+                move |_, _| settings_radio_button_style(&theme_clone.clone())
+            })
             .into(),
-        notice_item(
-            theme.clone(),
-            "If an empty query should give you your most used actions",
-        ),
+            radio(
+                "Frequently Used",
+                MainPage::FrequentlyUsed,
+                Some(config.main_page),
+                |page| Message::SetConfig(SetConfigFields::SetPage(page)),
+            )
+            .style({
+                let theme_clone = theme_clone.clone();
+                move |_, _| settings_radio_button_style(&theme_clone.clone())
+            })
+            .into(),
+            radio("Nothing", MainPage::Blank, Some(config.main_page), |page| {
+                Message::SetConfig(SetConfigFields::SetPage(page))
+            })
+            .style(move |_, _| settings_radio_button_style(&theme_clone.clone()))
+            .into(),
+        ])
+        .spacing(30)
+        .into(),
+        notice_item(theme.clone(), "What an empty query should show"),
     ]);
 
     let theme_clone = theme.clone();
