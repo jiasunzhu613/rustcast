@@ -829,20 +829,24 @@ impl Shelly {
             .into(),
             tuple_row(
                 shellcommand_hint_text(theme.clone(), "Hotkey"),
-                text_input_cell(self.hotkey.clone().unwrap_or("".to_string()), &theme, "Hotkey")
-                    .on_input({
-                        let shell = shell.clone();
-                        move |input| {
-                            let old = shell.clone();
-                            let mut new = old.clone();
-                            new.hotkey = Some(input);
-                            Message::SetConfig(SetConfigFields::ShellCommands(Editable::Update {
-                                old,
-                                new,
-                            }))
-                        }
-                    })
-                    .into(),
+                text_input_cell(
+                    self.hotkey.clone().unwrap_or("".to_string()),
+                    &theme,
+                    "Hotkey",
+                )
+                .on_input({
+                    let shell = shell.clone();
+                    move |input| {
+                        let old = shell.clone();
+                        let mut new = old.clone();
+                        new.hotkey = Some(input);
+                        Message::SetConfig(SetConfigFields::ShellCommands(Editable::Update {
+                            old,
+                            new,
+                        }))
+                    }
+                })
+                .into(),
             )
             .into(),
             tuple_row(
